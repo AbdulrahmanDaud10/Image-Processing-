@@ -60,9 +60,9 @@ func NewImageResizeTask(imageData []byte, fileName string) ([]*asynq.Task, error
 	return tasks, nil
 }
 
-func HandleResizeImageTask(ctx context.Context, t *asynq.Task) error {
+func HandleResizeImageTask(ctx context.Context, task *asynq.Task) error {
 	var payload ResizeImagePayLoad
-	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 		return fmt.Errorf("failed to parse resize image task payload: %v", err)
 	}
 

@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/AbdulrahmanDaud10/image-processing-golang-service/tasks"
 	"github.com/gofiber/fiber/v2"
 )
 
 func UploadImage(ctx *fiber.Ctx) error {
-	file, err := ctx.FormFile("file")
+	file, err := ctx.FormFile("image")
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Upload Failed"})
 	}
@@ -24,9 +25,19 @@ func UploadImage(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to read the file"})
 	}
 
-	fmt.Println(data)
+	fileName := file.Filename
+	resizeTasks, err := tasks.NewImageResizeTask(data, fileName)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not create image resize tasks"})
+	}
 
-	// TODO: Resize the task
+	client := tasks.GetClient()
+	for _, task := range resizeTasks {
+		if _, err := client.Enqueue(task); err != nil {
+			fmt.Printf("Error enqueuing task: %v\n", err)
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not enqueue image resize task"})
+		}
+	}
 
-	return ctx.JSON(fiber.Map{"meaage": "Image upliaded and resizing task started"})
+	return ctx.JSON(fiber.Map{"meaage": "Image uploaded and resizing task started"})
 }
